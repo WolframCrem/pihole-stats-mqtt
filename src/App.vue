@@ -15,6 +15,11 @@
         <td>{{stat.fetched}}</td>
       </tr>
     </table>
+    <div v-show="!hidden">
+      <input v-model='domain'>
+      <button @click="block">block domain</button>
+      <button @click="unblock">unblock domain</button>
+    </div>
   </div>
 
 </template>
@@ -28,20 +33,25 @@ export default {
   props: ['stats'],
   data() {
     return {
-      piholeStats: this.stats
+      piholeStats: this.stats,
+      domain: this.domain,
+      hidden: true,
+      client: null
     }
   },
 
   methods: {
     init() {
       this.piholeStats = [];
-      const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
+      this.client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
 
-      client.on('connect', () => {
-        client.subscribe('/testgroupname/stats/pihole');
+      this.client.on('connect', () => {
+        this.client.subscribe('/testgroupname/stats/pihole');
+        // this.client.subscribe('/testgroupname/stats/block');
       });
 
-      client.on('message', (topic, message) => {
+      this.client.on('message', (topic, message) => {
+        this.hidden = false
         const data = JSON.parse(message.toString());
         data.fetched = new Date();
         console.log(data);
@@ -55,6 +65,13 @@ export default {
         const percentage = (Number(blocked) / Number(total) * 100);
         return percentage.toFixed(1)
       }
+    },
+    block() {
+      this.client.publish('/testgroupname/stats/block', this.domain)
+    },
+    unblock() {
+      alert('hfueifgheyuifvbtyue')
+      this.client.publish('/testgroupname/stats/unblock', this.domain)
     }
   }
 }
